@@ -11,14 +11,16 @@ in this game"""
 
 
 class Player:
-    # here score is the number of wins for each player, used each round
-    score = 0
-    # list of recorded moves for each player
-    my_moves = []
-    their_moves = []
+    def __init__(self):
+        # here score is the number of wins for each player, used each round
+        self.score = 0
+        # list of recorded moves for each player
+        self.my_moves = []
+        self.their_moves = []
 
     # methot called to update the reocorded moves
     def learn(self, my_move, their_move):
+        print("pXLearn: ")
         self.my_moves.append(my_move)
         self.their_moves.append(their_move)
 
@@ -47,17 +49,15 @@ class ReflectPlayer(Player):
 # AIv3 input subclass
 class CyclePlayer(Player):
     def move(self):
-        cycle_moves = moves
-        print('mymoves= ', self.my_moves)
+        cycle_moves = ['rock', 'paper', 'scissors']
         if len(self.my_moves)==0:
-            return random.choice(moves)
+            return random.choice(cycle_moves)
         else:
             cycle_moves.remove(self.my_moves[-1])
             if len(self.my_moves)==1:
                 return random.choice(cycle_moves)
             else:
                 cycle_moves.remove(self.my_moves[-2])
-                print (cycle_moves)
                 return cycle_moves[0]
         
 
@@ -85,7 +85,9 @@ class Game:
             self.p2.score +=1
             print(f"Player 2 Wins!")
         print(f"Score: Player 1: {self.p1.score}  Player 2: {self.p2.score}")
+        print("p1Learn")
         self.p1.learn(move1, move2)
+        print("p2Learn")
         self.p2.learn(move2, move1)
 
     def play_game(self):

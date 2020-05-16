@@ -132,7 +132,7 @@ class Game:
     def play_round(self):
         move1 = self.p1.move()
         move2 = self.p2.move()
-        print(f"YOU: {move1}  self.p2.name: {move2}")
+        print(f"YOU: {move1}  {self.p2.name}: {move2}")
         # who wins or tie
         if  beats(move1, move2):
             self.p1.score += 1

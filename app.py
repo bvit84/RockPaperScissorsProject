@@ -1,13 +1,18 @@
-"""This program plays a game of Rock, Paper, Scissors between two Players,
-and reports both Player's scores each round."""
-
+# needed to pause after printing something
 import time
+# needed for random option
 import random
+# global variable with available moves
 moves = ['rock', 'paper', 'scissors']
 
-"""The Player class is the parent class for all of the Players
-in this game"""
 
+# 1st and one time message about program
+def intro():
+    print_slow("This program plays a game of Rock, Paper, Scissors between 2 Players, ")
+    print_slow("and reports both Player's scores each round.")
+
+
+# The Player class is the parent class for all of the Players in this game
 class Player:
     # instance variables for each player object
     def __init__(self):
@@ -17,30 +22,29 @@ class Player:
         self.my_moves = []
         self.their_moves = []
 
-    # methot called to update move list
+    # update move list for each player object
     def learn(self, my_move, their_move):
         self.my_moves.append(my_move)
         self.their_moves.append(their_move)
 
-# AI input subclass, returns random move
+# Player v0 subclass, returns validated USER input
+class HumanPlayer(Player):
+    name = "YOU"
+    def move(self):
+        return check_validity('Rock, Paper, Scissors?: ', moves)
+
+
+# Player v1 subclass, returns random move
 class RandomPlayer(Player):
     name = "Random AI"
 
     def move(self):
         return random.choice(moves)
-
-# user input subclass, returns validated input
-class HumanPlayer(Player):
-    name = "YOU"
-
-    def move(self):
-        return check_validity(input('Rock, Paper, Scissors?: ').lower(), moves)
             
 
-# AIv2 input subclass, returns last move in oponent list if any
+# Player v2 subclass, returns last move in oponent list if any
 class ReflectPlayer(Player):
     name = "Reflected AI"
-
     def move(self):
         if len(self.their_moves)==0:
             return random.choice(moves)
@@ -48,10 +52,9 @@ class ReflectPlayer(Player):
             return self.their_moves[-1]
 
 
-# AIv3 input subclass, returns cycled own move ommiting last 2 used if any
+# Player v3 subclass, returns cycled own move ()
 class CyclePlayer(Player):
     name = "Cycled AI"
-
     def move(self):
         cycle_moves = ['rock', 'paper', 'scissors']
         if len(self.my_moves)==0:
@@ -64,26 +67,11 @@ class CyclePlayer(Player):
                 cycle_moves.remove(self.my_moves[-2])
                 return cycle_moves[0]
         
-# provided, checks if move1 beats move2
-def beats(one, two):
-    return ((one == 'rock' and two == 'scissors') or
-            (one == 'scissors' and two == 'paper') or
-            (one == 'paper' and two == 'rock'))
-
-
-# last option in game
-def play_again():
-    if check_validity(choice_show([
-            "Would you like to play again? (y/n)"]), ["y", "n"]) == "y":
-        start_game()
-    else:
-        print_slow("Goodbye!")
-
-# slowly prints the choices, and returns the user input
-def choice_show(choice_list):
-    for choice in choice_list:
-        print_slow(choice)
-    return input().lower()
+# provided, used to checks if 1st player's move beats 2nd player's move
+def beats(a, b):
+    return ((a == 'rock' and b == 'scissors') or
+            (a == 'scissors' and b == 'paper') or
+            (a == 'paper' and b == 'rock'))
 
 
 # prints string and pauses
@@ -92,16 +80,14 @@ def print_slow(s):
     print(s)
 
 
-# intro information before game starts
-def intro():
-    print_slow(
-        """This program plays a game of Rock, Paper, Scissors between two Players,
-and reports both Player's scores each round."""
-    )
-
-
-# checks validity of string, retries if failed
-def check_validity(input_string, valid_options):
+# checks validity of list, retries if failed
+def check_validity(choice_list, valid_options):
+    if type(choice_list) == list:
+        for choice in choice_list:
+            print_slow(choice)
+    else:
+        print_slow(choice_list)
+    input_string = input().lower()
     while True:
         if input_string in valid_options:
             return input_string
@@ -109,7 +95,16 @@ def check_validity(input_string, valid_options):
             print_slow("Please try again.")
             input_string = input().lower()
 
-#  
+
+# last option in game
+def play_again():
+    if check_validity("Would you like to play again? (y/n)", ["y", "n"]) == "y":
+        start_game()
+    else:
+        print_slow("Goodbye!")
+
+
+#  main code for the game
 class Game:
     def __init__(self, p1, p2):
         self.p1 = p1
@@ -142,12 +137,12 @@ class Game:
             for round in range(3):
                 round+=1
                 self.play_round(round)
-        elif rounds == "3wins":
+        elif rounds == "3 wins ahead":
             while ((self.p1.score != (self.p2.score+3)) and ((self.p1.score+3) != self.p2.score)):
                 round+=1
                 self.play_round(round)
         else:
-            while check_validity(choice_show(["Play round? (y/n)"]), ["y", "n"]) == "y":
+            while check_validity("Play round? (y/n)", ["y", "n"]) == "y":
                 round+=1
                 self.play_round(round)
 
@@ -161,27 +156,26 @@ class Game:
         else:
             print_slow (f"{self.p2.name} WON! :(")
 
-# 1st def that starts the game
+# game 
 def start_game():
-    intro()
     print_slow("How many rounds to play?:")
-    choice = check_validity(choice_show([
-            "Peress [ENTER] to play quick 3 rounds",
-            "Enter 3 to play until one player is ahead by three points",
-            "Enter 'q' to play non-stop!"
-            ]), ["", "3","q"])
+    choice = check_validity([
+            "Peress [ENTER] to play quick three rounds",
+            "Enter 3 to play until any player is ahead by 3 wins",
+            "Peress [SPACEBAR] to play until tired!"
+            ], ["", "3"," "])
     if  choice == "":
         rounds_selection = 3
     elif choice == "3":
-        rounds_selection = "3wins"
+        rounds_selection = "3 wins ahead"
     else:
-        rounds_selection = "qstop"
-    print_slow("Now choose AI player type:")
-    choice = check_validity(choice_show([
-            "Peress [ENTER] to play 'random'",
+        rounds_selection = "tired"
+    print_slow("Now choose Player 2 type:")
+    choice = check_validity([
+            "Peress [ENTER] to play 'random', the player chooses its move at random",
             "Enter r to play 'reflected'",
             "Enter c to play 'cycled'"
-            ]), ["", "r","c"])
+            ], ["", "r","c"])
     if  choice == "":
         AI = RandomPlayer()
         AItype = "Random"
@@ -197,7 +191,13 @@ def start_game():
     game.show_winner()
     play_again()
 
-# game will not start if imported
-if __name__ == '__main__':
-    # the only game call
+
+def start_program():
+    intro()
     start_game()
+
+
+# nothing starts if imported
+if __name__ == '__main__':
+    # the only call
+    start_program()

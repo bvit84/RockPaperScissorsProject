@@ -34,11 +34,7 @@ class HumanPlayer(Player):
     name = "YOU"
 
     def move(self):
-        self.input_text = ""
-        while self.input_text not in moves:
-            self.input_text = (input('Rock, Paper, Scissors?: ')).lower()
-        else:
-            return self.input_text
+        return check_validity(input('Rock, Paper, Scissors?: ').lower(), moves)
             
 
 # AIv2 input subclass, returns last move in oponent list if any
@@ -75,32 +71,22 @@ def beats(one, two):
             (one == 'paper' and two == 'rock'))
 
 
-# Announce the winner at the end of game
-def score_is(a,b):
-    if a >> b:
-        return "Player 1 WON!"
-    elif a == b:
-        return "It is a TIE !"
-    else:
-        return "Player 2 WON!"
-
-
 # last option in game
 def play_again():
     if check_validity(choice_show([
             "Would you like to play again? (y/n)"]), ["y", "n"]) == "y":
-        play_game()
+        start_game()
     else:
         print_slow("Goodbye!")
 
-# slowly prints the choises, and returns the user input
-def choice_show(choise_list):
-    for choice in choise_list:
+# slowly prints the choices, and returns the user input
+def choice_show(choice_list):
+    for choice in choice_list:
         print_slow(choice)
     return input().lower()
 
 
-# prints string and waits
+# prints string and pauses
 def print_slow(s):
     time.sleep(0.5)
     print(s)
@@ -129,62 +115,89 @@ class Game:
         self.p1 = p1
         self.p2 = p2
 
-    def play_round(self):
+    def play_round(self,round):
+        print_slow (f"Round {round}:")
         move1 = self.p1.move()
         move2 = self.p2.move()
-        print(f"YOU: {move1}  {self.p2.name}: {move2}")
+        print_slow(f"YOU: {move1}  {self.p2.name}: {move2}")
         # who wins or tie
         if  beats(move1, move2):
             self.p1.score += 1
-            print(f"{self.p1.name} Won!")
+            print_slow(f"{self.p1.name} Won!")
         elif (move1 == move2):
-            print(f"Tie!")
+            print_slow(f"Tie!")
         else:
             self.p2.score +=1
-            print(f"{self.p2.name} Wins!")
-        print(f"Score: {self.p1.name}: {self.p1.score}  {self.p2.name}: {self.p2.score}")
+            print_slow(f"{self.p2.name} Wins!")
+        print_slow(f"Round {round} score: {self.p1.name}: {self.p1.score}  {self.p2.name}: {self.p2.score}")
         self.p1.learn(move1, move2)
         self.p2.learn(move2, move1)
 
-    # start of game and round loop
-    def play_game(self,rounds):
-        print("Game start!")
-        for round in range(1, rounds+1):
-            print(f"Round {round}:")
-            self.play_round()
-        # winner announcement
-        print(f"Game ended!\n{score_is(self.p1.score,self.p2.score)}")
+
+    # start of game and rounds loop
+    def play_game(self, rounds):
+        print_slow("Game start!")
+        round = 0
+        if rounds == 3:
+            for round in range(3):
+                round+=1
+                self.play_round(round)
+        elif rounds == "3wins":
+            while ((self.p1.score != (self.p2.score+3)) and ((self.p1.score+3) != self.p2.score)):
+                round+=1
+                self.play_round(round)
+        else:
+            while check_validity(choice_show(["Play round? (y/n)"]), ["y", "n"]) == "y":
+                round+=1
+                self.play_round(round)
+
+    # winner announcement
+    def show_winner(self):
+        print_slow("Game ended!")
+        if self.p1.score >> self.p2.score:
+            print_slow (f"{self.p1.name} WON! :)")
+        elif self.p1.score == self.p2.score:
+            print_slow ("It is a TIE ! :|")
+        else:
+            print_slow (f"{self.p2.name} WON! :(")
 
 # 1st def that starts the game
-def play_game():
+def start_game():
     intro()
-    choise = check_validity(choice_show([
+    print_slow("How many rounds to play?:")
+    choice = check_validity(choice_show([
             "Peress [ENTER] to play quick 3 rounds",
             "Enter 3 to play until one player is ahead by three points",
-            "Enter 'q' to play untill 'quit' or 'q' is entered"
+            "Enter 'q' to play non-stop!"
             ]), ["", "3","q"])
-    if  choise == "":
-        rounds = 3
-    elif choise == "2":
-        rounds = "3wins"
+    if  choice == "":
+        rounds_selection = 3
+    elif choice == "3":
+        rounds_selection = "3wins"
     else:
-        rounds = "qstop"
-    choise = check_validity(choice_show([
+        rounds_selection = "qstop"
+    print_slow("Now choose AI player type:")
+    choice = check_validity(choice_show([
             "Peress [ENTER] to play 'random'",
             "Enter r to play 'reflected'",
-            "Enter 3 to play 'cycled'"
+            "Enter c to play 'cycled'"
             ]), ["", "r","c"])
-    if  choise == "":
+    if  choice == "":
         AI = RandomPlayer()
-    elif choise == "r":
+        AItype = "Random"
+    elif choice == "r":
         AI = ReflectPlayer()
+        AItype = "Reflected"
     else:
         AI = CyclePlayer()
+        AItype = "Cycled"
+    print_slow(f"Selected Game: {rounds_selection} rounds with {AItype} type of AI")
     game = Game(HumanPlayer(), AI)
-    game.play_game(rounds)
+    game.play_game(rounds_selection)
+    game.show_winner()
     play_again()
 
 # game will not start if imported
 if __name__ == '__main__':
     # the only game call
-    play_game()
+    start_game()

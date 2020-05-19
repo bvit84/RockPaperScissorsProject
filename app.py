@@ -2,6 +2,8 @@
 import time
 # needed for random option
 import random
+# needed for infinite loop check
+import math
 # global variable with available moves
 moves = ['rock', 'paper', 'scissors']
 
@@ -11,7 +13,6 @@ def intro():
     print_slow("This program plays a game of Rock, Paper, Scissors between 2 Players, ")
     print_slow("and reports both Player's scores each round.")
     print_slow("NOTE: Pressing [ENTER] key without selecting any choice will pick a random choice for you!")
-    
 
 
 # The Player class is the parent class for all of the Players in this game
@@ -24,16 +25,24 @@ class Player:
         self.my_moves = []
         self.their_moves = []
 
+    def move(self):
+        return "rock"
+
     # update move list for each player object
     def learn(self, my_move, their_move):
         self.my_moves.append(my_move)
         self.their_moves.append(their_move)
 
-# Player v0 subclass, returns validated USER input
+# Player Human subclass, returns validated USER input
 class HumanPlayer(Player):
-    name = "YOU"
+    name = "Human"
     def move(self):
-        return check_validity('Rock, Paper, Scissors?: ', moves)
+        return check_validity("Rock, Paper, Scissors?:", moves)
+
+
+# Player v0 subclass, returns validated USER input
+class RockPlayer(Player):
+    name = "Mr Rock"
 
 
 # Player v1 subclass, returns random move
@@ -82,11 +91,6 @@ def print_slow(s):
     print(s)
 
 
-# sorcut for printing user choice
-def print_my_choice(choice):
-    print_slow(f"Your choice is {choice}!")
-
-
 # checks validity of list, retries if failed
 def check_validity(choice_list, valid_options):
     if type(choice_list) == list:
@@ -100,19 +104,12 @@ def check_validity(choice_list, valid_options):
             return input_string
         # random choice for [ENTER] only
         elif input_string == "":
-            print_slow("* Random selection!")
-            return random.choice(valid_options)
+            choice = random.choice(valid_options)
+            print_slow(f"Random option: {choice}")
+            return choice
         else:
             print_slow("Please try again.")
             input_string = input().lower()
-
-
-# last option in game
-def play_again():
-    if check_validity("Would you like to play again? (y/n)", ["y", "n"]) == "y":
-        start_game()
-    else:
-        print_slow("Goodbye!")
 
 
 #  main code for the game
@@ -121,49 +118,59 @@ class Game:
         self.p1 = p1
         self.p2 = p2
 
-    def play_round(self,round):
-        print_slow (f" Round _{round}_")
-        move1 = self.p1.move()
-        move2 = self.p2.move()
-        print_slow(f"YOU: {move1}  {self.p2.name}: {move2}")
-        # who wins or tie
-        if  beats(move1, move2):
-            self.p1.score += 1
-            print_slow(f"{self.p1.name} Won!")
-        elif (move1 == move2):
-            print_slow(f"Tie!")
-        else:
-            self.p2.score +=1
-            print_slow(f"{self.p2.name} Wins!")
-        # show round score
-        print_slow(f"Round {round} score: {self.p1.name}: {self.p1.score}  {self.p2.name}: {self.p2.score}")
-        # call for score update
-        self.p1.learn(move1, move2)
-        self.p2.learn(move2, move1)
-
     # start of game
     def play_game(self, rounds):
         print_slow("--- Game start! ---")
-        round = 0
+        round = 1
+
         # round loop based on type selected
-        if rounds == "3 rounds":
-            for round in range(3):
-                round+=1
+        if rounds == "quick three rounds":
+            for round in range(4):
                 self.play_round(round)
-        elif rounds == "3 wins ahead":
+                round+=1
+        elif rounds == "until any player is ahead by 3 wins":
             while ((self.p1.score != (self.p2.score+3)) and ((self.p1.score+3) != self.p2.score)):
                 round+=1
                 self.play_round(round)
+                # check 10 rounds for infinite loop
+                if (math.gcd(round, 10) == 10):
+                    if check_validity("Play more rounds? (y/n)", ["y", "n"]) == "n":
+                        break
         else:
             self.play_round(round)
             while check_validity("Play another round? (y/n)", ["y", "n"]) == "y":
                 round+=1
                 self.play_round(round)
+        self.show_winner()
+
+    # round process
+    def play_round(self,round):
+        print_slow (f"Round _{round}_")
+        print_slow(f"{self.p1.name} move:")
+        move1 = self.p1.move()
+        print_slow(f"[{move1}]")
+        print_slow(f"{self.p2.name} move:")
+        move2 = self.p2.move()
+        print_slow(f"[{move2}]")
+        # win or tie
+        if  beats(move1, move2):
+            self.p1.score += 1
+            print_slow(f"{self.p1.name}'s [{move1}] beats {self.p2.name}'s [{move2}]")
+        elif (move1 == move2):
+            print_slow(f"{self.p1.name}'s [{move1}] is same as {self.p2.name}'s [{move2}]")
+        else:
+            self.p2.score +=1
+            print_slow(f"{self.p1.name}'s [{move1}] loses {self.p2.name}'s [{move2}]")
+        # show round score
+        print_slow(f"Round {round} score:\n{self.p1.name} {self.p1.score}\n{self.p2.name} {self.p2.score}")
+        # call for score update
+        self.p1.learn(move1, move2)
+        self.p2.learn(move2, move1)
 
     # winner/tie announcement
     def show_winner(self):
         print_slow("--- Game ended! ---")
-        print_slow(f"Final score: {self.p1.name}: {self.p1.score}  {self.p2.name}: {self.p2.score}")
+        print_slow(f"Final score: {self.p1.name}: {self.p1.score} vs {self.p2.name}: {self.p2.score}")
         if self.p1.score > self.p2.score:
             print_slow (f"*** {self.p1.name} WON! ***")
         elif self.p1.score == self.p2.score:
@@ -172,41 +179,69 @@ class Game:
             print_slow (f"*** {self.p2.name} WON! ***")
 
 
-# game option selection 
-def start_game():
-    print_slow("---------")
-    print_slow("How many rounds would you like to play?:")
+# player options selection
+def player_options():
     choice = check_validity([
-            "Enter 1 to play quick three rounds",
-            "Enter 2 to play until any player is ahead by 3 wins",
-            "Enter 3 to play until YOU stop it!"
-            ], ["1", "2", "3"])
-    if  choice == "1":
-        rounds_selection = "3 rounds"
-    elif choice == "2":
-        rounds_selection = "3 wins ahead"
-    else:
-        rounds_selection = "YOU stop it"
-    print_my_choice(choice)
-    print_slow("Now choose Player 2:")
-    choice = check_validity([
+            "Enter 'human' to play as a person (keyboard input)",
+            "Enter 'rock' to play as Mr Rock (always plays 'rock')",
             "Enter 'random' to play as Mr Random (chooses it's move at random)",
             "Enter 'reflect' to play as Mr Reflect (plays opponent's last round move)",
             "Enter 'cycle' to play as Mr Cycle (cycles through the different moves)"
-            ], ["random", "reflect", "cycle"])
-    if  choice == "random":
-        player2 = RandomPlayer()
+            ], ["human", "rock", "random", "reflect", "cycle"])
+    if  choice == "human":
+        return HumanPlayer()
+    elif  choice == "rock":
+        return RockPlayer()
+    elif choice == "random":
+        return RandomPlayer()
     elif choice == "reflect":
-        player2 = ReflectPlayer()
+        return ReflectPlayer()
     else:
-        player2 = CyclePlayer()
-    print_my_choice(choice)
-    print_slow(f'Selected Game: "{rounds_selection}" with {player2.name}')
-    game = Game(HumanPlayer(), player2)
-    game.play_game(rounds_selection)
+        return CyclePlayer()
 
-    game.show_winner()
-    play_again()
+
+# game option selection 
+def start_game():
+    print_slow("---------")
+    
+    # players selection
+    print_slow("Choose Player 1:")
+    player1 = player_options()
+    print_slow("Now choose Player 2:")
+    player2 = player_options()
+
+    # checks if both players name are same type, if so changes names to differentiate
+    if (player1.name == player2.name):
+        player1.name = "1st " + player1.name
+        player2.name = "2nd " + player2.name
+
+    # rounds type selection
+    print_slow("How many rounds would you like the game to last?:")
+    choice = check_validity([
+            "Enter 1 to play quick three rounds",
+            "Enter 2 to play until any player is ahead by 3 wins",
+            "Enter 3 to play until USER stops it"
+            ], ["1", "2", "3"])
+    if  choice == "1":
+        rounds_selection = "quick three rounds"
+    elif choice == "2":
+        rounds_selection = "until any player is ahead by 3 wins"
+    else:
+        rounds_selection = "until USER stops it"
+
+    # print selected game options
+    print_slow(f'Selected Game: {player1.name} vs {player2.name} play {rounds_selection}')
+    game = Game(player1, player2)
+    game.play_game(rounds_selection)
+    end_game()
+
+
+# option for game to start again or end
+def end_game():
+    if check_validity(" Would you like to play again? (y/n)", ["y", "n"]) == "y":
+        start_game()
+    else:
+        print_slow("Goodbye!")
 
 
 # call for parts of program
